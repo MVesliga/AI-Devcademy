@@ -29,13 +29,17 @@ def main():
 
     conn = get_db_connection("chunking_db")
     embedding_model = get_embedding_model()
-    cluster_model = SentenceTransformer("BAAI/bge-m3") if CHUNKING_METHOD == "cluster" else None
+    cluster_model = SentenceTransformer("BAAI/bge-m3", device="cpu") if CHUNKING_METHOD == "cluster" else None
     table = TABLE_MAP[CHUNKING_METHOD]
 
     batch_rows = []
+    processed_count = 0
 
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         for line in f:
+            if processed_count >= 50:
+                break
+
             record = json.loads(line)
             doc_id = record.get("doc_id")
             author = record.get("author")
@@ -55,6 +59,8 @@ def main():
             embeddings = embedding_model.embed_documents(chunks)
             for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
                 batch_rows.append((doc_id, author, chunk, emb, i, CHUNKING_METHOD))
+
+            processed_count += 1
 
             # --- Batch insert ---
             if len(batch_rows) >= BATCH_SIZE:
