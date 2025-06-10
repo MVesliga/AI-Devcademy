@@ -1,6 +1,9 @@
 import json
 import sys
 import os
+from importlib.metadata import metadata
+
+from sentry_sdk.utils import json_dumps
 
 from db.connection import get_db_connection
 from embeddings.model import get_embedding_model
@@ -58,7 +61,13 @@ def main():
             # --- Embed and collect ---
             embeddings = embedding_model.embed_documents(chunks)
             for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
-                batch_rows.append((doc_id, author, chunk, emb, i, CHUNKING_METHOD))
+                metadata = {
+                    "doc_id": doc_id,
+                    "author": author,
+                    "chunk_index": i,
+                    "chunking_method": CHUNKING_METHOD
+                }
+                batch_rows.append((doc_id, author, chunk, emb, i, CHUNKING_METHOD, json_dumps(metadata)))
 
             processed_count += 1
 

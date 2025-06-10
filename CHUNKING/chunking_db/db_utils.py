@@ -6,7 +6,7 @@ def insert_chunks(conn, table_name, rows):
             cur,
             f"""
             INSERT INTO {table_name} 
-                (doc_id, author, chunk, embedding, chunk_index, chunking_method)
+                (doc_id, author, chunk, embedding, chunk_index, chunking_method, cmetadata)
             VALUES %s
             """,
             rows
