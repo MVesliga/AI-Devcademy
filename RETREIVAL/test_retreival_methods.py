@@ -2,7 +2,11 @@ import os
 import json
 import random
 
+from langchain.chains.summarize import load_summarize_chain
 from langchain_community.vectorstores import PGVector
+
+from RETREIVAL.router import route_query
+from RETREIVAL.sql_generator import generate_sql_query
 from embeddings.model import get_embedding_model
 from langchain_community.llms import HuggingFacePipeline
 from transformers import pipeline
@@ -45,6 +49,14 @@ def get_llm():
         device=-1  # CPU
     )
 
+def extract_important_parts(docs, llm):
+    if not docs:
+        return []
+    chain = load_summarize_chain(llm, chain_type="map_reduce")
+    return chain.run(docs)
+
+
+
 # --- Main logic ---
 def main():
     llm = get_llm()
@@ -56,6 +68,15 @@ def main():
     for example in eval_set:
         query = example["question"]
         print(f"\n=== Query: {query} ===")
+
+        route = route_query(query, llm)
+        print(f"\n[Routing Decision] → {route}")
+
+        if route == "metadata":
+            result = generate_sql_query(query, table_name, llm)
+            print("\n[Metadata SQL Result]")
+            print(result)
+            continue  # Skip vector methods
 
         # --- HyDE ---
         hyde_docs = hyde_retrieval(query, retriever, llm)
@@ -81,10 +102,15 @@ def main():
         subquestions = decompose_query(query, llm)
         print("\n[Query Decomposition]")
         print("Sub-questions:", subquestions)
+        all_sub_docs = []
         for sub in subquestions:
             sub_docs = retriever.get_relevant_documents(sub)
+            all_sub_docs.extend(sub_docs)
             for doc in sub_docs:
                 print("-", doc.page_content.strip()[:200])
+        summary = extract_important_parts(all_sub_docs, llm)
+        print("\n[Query Decomposition Summary]")
+        print(summary)
 
 if __name__ == "__main__":
     main()
