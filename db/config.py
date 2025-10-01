@@ -11,7 +11,7 @@ JSON_TEXT_FIELD = "text"
 JSON_DOC_ID_FIELD = "doc_id"
 JSON_AUTHOR_FIELD = "author"
 
-TABLE_NAME = "rga_embeddings"
+TABLE_NAME = "rag_embeddings"
 TEXT_COLUMN_NAME = "text_content"
 EMBEDDING_COLUMN_NAME = "embedding"
 DOC_ID_COLUMN_NAME = "doc_id"
